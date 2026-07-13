@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAtlas | Developer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen p-8 selection:bg-blue-200 selection:text-blue-900 relative">
+
+    <div class="max-w-6xl mx-auto mb-10 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+            <h1 class="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">CodeAtlas</h1>
+            <p class="text-gray-500 font-mono text-sm">Automated Architecture & Security Auditor</p>
+        </div>
+        <div class="flex flex-col items-end gap-2">
+            <div class="hidden sm:block px-4 py-2 bg-white border border-gray-200 rounded-md font-mono text-xs text-gray-500 shadow-sm">
+                ENGINE STATUS: <span class="text-green-600 font-bold">ONLINE</span> | PORT: 5001
+            </div>
+            <div id="accountWidget"></div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto bg-white border border-gray-200 p-6 rounded-2xl shadow-sm mb-8">
+        <div class="flex flex-col sm:flex-row gap-4">
+            <input type="text" id="repoUrl" placeholder="Enter GitHub URL OR just a Username "
+                class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-5 py-4 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-mono text-sm">
+            <div class="flex gap-2 flex-wrap">
+                <button id="profileBtn" onclick="runProfileScan()"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    Find Repos
+                </button>
+                <button id="historyBtn" onclick="openHistoryTab()"
+                    class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-4 px-6 rounded-xl transition-all shadow-md border border-gray-200 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    History
+                </button>
+                <button id="scanBtn" onclick="runScan()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-md">
+                    Deep Audit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="hidden max-w-6xl mx-auto flex flex-col items-center justify-center py-20">
+        <div class="relative w-24 h-24">
+            <div class="absolute inset-0 border-t-4 border-blue-600 border-solid rounded-full animate-spin"></div>
+            <div class="absolute inset-2 border-r-4 border-indigo-600 border-solid rounded-full animate-spin border-opacity-70" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+        </div>
+        <p class="text-blue-600 font-mono mt-6 animate-pulse font-bold">Scanning & mapping architecture...</p>
+    </div>
+
+    <div id="dashboardControls" class="max-w-6xl mx-auto hidden mb-6 flex gap-4 p-2 bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
+        <button onclick="switchTab('tab-portfolio')" id="btn-portfolio" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            📁 Portfolio
+        </button>
+        <button onclick="switchTab('tab-overview')" id="btn-overview" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            📊 Overview
+        </button>
+        <button onclick="switchTab('tab-architecture')" id="btn-architecture" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            🏗️ Architecture
+        </button>
+        <button onclick="switchTab('tab-logic')" id="btn-logic" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            🧠 Logic
+        </button>
+        <button onclick="switchTab('tab-api')" id="btn-api" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            🌐 API
+        </button>
+        <button onclick="switchTab('tab-ast')" id="btn-ast" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            🌳 AST View
+        </button>
+        <button onclick="switchTab('tab-repo')" id="btn-repo" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            🗂️ Repo Structure
+        </button>
+        <button onclick="switchTab('tab-history')" id="btn-history" class="flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all">
+            🕘 History
+        </button>
+    </div>
+
+    <div id="dashboard" class="max-w-6xl mx-auto hidden flex-col gap-6">
+
+        <div id="tab-portfolio" class="tab-content hidden flex-col gap-6">
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm h-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-gray-500 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Discovered Repositories
+                    </h2>
+                    <span id="repoCount" class="bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm">0 Found</span>
+                </div>
+                <div id="portfolioGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[400px] overflow-y-auto pr-2 pb-4"></div>
+            </div>
+        </div>
+
+        <div id="tab-overview" class="tab-content flex flex-col gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="bg-white border border-gray-200 p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+                    <h2 class="text-gray-500 font-mono text-xs uppercase tracking-widest mb-2">Health Audit</h2>
+                    <div id="gradeDisplay" class="text-8xl font-black z-10">A</div>
+                    <p id="scoreDisplay" class="text-gray-500 mt-2 font-mono z-10">100 / 100 Points</p>
+                    <div id="cachedRow" class="hidden items-center gap-2 mt-2 z-10">
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">⚡ cached result</span>
+                        <button onclick="forceRescan()" class="text-[10px] font-bold text-blue-600 hover:underline">rescan now</button>
+                    </div>
+                    <div id="trendSparkline" class="w-full mt-2 z-10"></div>
+                    <button onclick="downloadReport()" class="mt-3 text-xs font-bold text-gray-500 hover:text-blue-600 flex items-center gap-1 z-10">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Export Report
+                    </button>
+                    <div id="gradeGlow" class="absolute inset-0 opacity-10 rounded-2xl pointer-events-none"></div>
+                </div>
+                <div class="bg-white border border-gray-200 p-6 rounded-2xl lg:col-span-3 shadow-sm">
+                    <h2 class="text-blue-600 font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Architectural Summary
+                    </h2>
+                    <p id="summaryDisplay" class="text-gray-700 leading-relaxed text-sm"></p>
+                </div>
+            </div>
+            <div id="securityAlerts" class="hidden bg-red-50 border border-red-200 p-6 rounded-2xl shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-red-500 animate-pulse"></div>
+                <h2 class="text-red-700 font-bold text-lg flex items-center gap-2 mb-4 pl-4">⚠️ CRITICAL SECURITY LEAKS DETECTED</h2>
+                <ul id="leakList" class="space-y-3 pl-4"></ul>
+            </div>
+        </div>
+
+        <div id="tab-architecture" class="tab-content hidden flex-col gap-6">
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <h2 class="text-gray-500 font-bold text-sm uppercase tracking-wider">Structure View</h2>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1 bg-gray-100 rounded-lg border border-gray-200 p-1">
+                            <button id="archViewGraphBtn" onclick="setArchView('graph')" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-blue-600 text-white shadow-sm">🕸️ Dependency Graph</button>
+                            <button id="archViewTreeBtn" onclick="setArchView('tree')" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all text-gray-600 hover:bg-gray-200">🌳 AST Tree</button>
+                        </div>
+                        <div id="archZoomControls" class="hidden items-center gap-1 bg-gray-100 rounded-lg border border-gray-200 p-1">
+                            <button onclick="archTreeZoomOut()" title="Zoom out" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 font-bold text-gray-700 leading-none">−</button>
+                            <span id="archZoomLabel" class="text-xs font-mono text-gray-600 w-11 text-center select-none">100%</span>
+                            <button onclick="archTreeZoomIn()" title="Zoom in" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 font-bold text-gray-700 leading-none">+</button>
+                            <button onclick="archTreeZoomFit()" title="Fit to screen" class="ml-1 px-2 h-7 rounded hover:bg-gray-200 text-xs font-bold text-gray-700 leading-none">Fit</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="archGraphPanel">
+                    <div id="mermaidDisplay" class="flex justify-center items-center bg-gray-50 p-4 rounded-xl border border-gray-200 min-h-[400px] overflow-x-auto"></div>
+                </div>
+                <div id="archTreePanel" class="hidden">
+                    <div id="archAstScrollWrapper" class="bg-gray-900 rounded-xl p-6 h-[400px] overflow-auto shadow-inner text-gray-300 font-mono text-sm leading-relaxed border border-gray-800">
+                        <div id="archAstContainer" style="transform-origin: top left; transition: transform 0.12s ease-out; display: inline-block;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                <h2 class="text-blue-600 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between">
+                    Files Accessed <span id="fileAccessCount" class="text-gray-400">0</span>
+                </h2>
+                <div id="filesAccessedList" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-2 pb-2"></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                    <h2 class="text-indigo-600 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between">
+                        Core Classes <span id="classCount" class="text-gray-400">0</span>
+                    </h2>
+                    <div id="classesList" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-2 pb-2"></div>
+                </div>
+                <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                    <h2 class="text-teal-600 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between">
+                        Key Functions <span id="functionCount" class="text-gray-400">0</span>
+                    </h2>
+                    <div id="functionsList" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-2 pb-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-logic" class="tab-content hidden flex-col gap-6">
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm h-full">
+                <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    Deep Logic Extraction
+                </h2>
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-6 min-h-[300px] overflow-y-auto shadow-inner">
+                    <p id="logicDisplay" class="text-gray-700 leading-relaxed text-base whitespace-pre-wrap font-mono"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-api" class="tab-content hidden flex-col gap-6">
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm h-full">
+                <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between items-center">
+                    Extracted API Endpoints <span id="apiCount" class="text-blue-600 bg-blue-50 px-3 py-1 rounded-full">0</span>
+                </h2>
+                <div class="overflow-x-auto bg-gray-50 rounded-xl border border-gray-200 min-h-[300px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                            <tr>
+                                <th class="p-4 text-xs font-bold text-gray-500 uppercase">Method</th>
+                                <th class="p-4 text-xs font-bold text-gray-500 uppercase">Endpoint</th>
+                                <th class="p-4 text-xs font-bold text-gray-500 uppercase">Source File</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apiTableBody" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="tab-ast" class="tab-content hidden flex-col gap-6">
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm h-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-gray-500 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                        Abstract Syntax Tree (Deep Parse)
+                    </h2>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="astTargetFile" class="bg-gray-100 text-gray-600 px-3 py-1 rounded font-mono text-xs font-bold border border-gray-200">Waiting...</span>
+                        <div class="flex items-center gap-1 bg-gray-100 rounded-lg border border-gray-200 p-1">
+                            <button onclick="setAstViewMode('tree')" id="astViewBtnTree" title="Indented text tree" class="px-3 h-7 rounded text-xs font-bold transition-all bg-blue-600 text-white">📄 Tree</button>
+                            <button onclick="setAstViewMode('graph')" id="astViewBtnGraph" title="Node-link diagram" class="px-3 h-7 rounded text-xs font-bold transition-all text-gray-700 hover:bg-gray-200">🕸️ Nodes</button>
+                        </div>
+                        <div id="astZoomControls" class="hidden items-center gap-1 bg-gray-100 rounded-lg border border-gray-200 p-1">
+                            <button onclick="astZoomOut()" title="Zoom out" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 font-bold text-gray-700 leading-none">−</button>
+                            <span id="astZoomLabel" class="text-xs font-mono text-gray-600 w-11 text-center select-none">100%</span>
+                            <button onclick="astZoomIn()" title="Zoom in" class="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200 font-bold text-gray-700 leading-none">+</button>
+                            <button onclick="astZoomFit()" title="Fit to screen" class="ml-1 px-2 h-7 rounded hover:bg-gray-200 text-xs font-bold text-gray-700 leading-none">Fit</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="astScrollWrapper" class="bg-gray-900 rounded-xl p-6 h-[500px] overflow-auto shadow-inner text-gray-300 font-mono text-sm leading-relaxed border border-gray-800">
+                    <div id="astContainer" style="transform-origin: top left; transition: transform 0.12s ease-out; display: inline-block;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-repo" class="tab-content hidden flex-col gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                    <h3 class="text-gray-400 font-mono text-xs uppercase tracking-widest mb-1">Files / Folders</h3>
+                    <p id="repoTreeCounts" class="text-2xl font-black text-gray-800">0 / 0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                    <h3 class="text-gray-400 font-mono text-xs uppercase tracking-widest mb-1">Branches</h3>
+                    <p id="repoBranchCount" class="text-2xl font-black text-gray-800">0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                    <h3 class="text-gray-400 font-mono text-xs uppercase tracking-widest mb-1">Commits (default branch)</h3>
+                    <p id="repoCommitCount" class="text-2xl font-black text-gray-800">0</p>
+                </div>
+                <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                    <h3 class="text-gray-400 font-mono text-xs uppercase tracking-widest mb-1">Pull Requests</h3>
+                    <p id="repoPrCounts" class="text-2xl font-black text-gray-800">0 open · 0 merged · 0 closed</p>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                    📇 Repository Metadata
+                </h2>
+                <div id="repoMetaGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                    <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between items-center">
+                        🌿 Branches <span id="branchListCount" class="text-gray-400">0</span>
+                    </h2>
+                    <div id="branchList" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-2"></div>
+                </div>
+                <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                    <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between items-center">
+                        🔀 Pull Requests <span id="prListCount" class="text-gray-400">0</span>
+                    </h2>
+                    <div id="prList" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
+                <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex justify-between items-center">
+                    📜 Recent Commits <span id="commitListCount" class="text-gray-400">0</span>
+                </h2>
+                <div id="commitList" class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-2"></div>
+            </div>
+
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm h-full">
+                <h2 class="text-gray-500 font-bold mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
+                    🗂️ Folder / File Tree
+                </h2>
+                <div id="repoTreeScrollWrapper" class="bg-gray-900 rounded-xl p-6 max-h-[500px] overflow-auto shadow-inner text-gray-300 font-mono text-sm leading-relaxed border border-gray-800">
+                    <div id="repoTreeContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-history" class="tab-content hidden flex-col gap-6">
+            <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm h-full">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <h2 class="text-gray-500 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Scan History
+                    </h2>
+                    <div class="flex gap-1 bg-gray-100 rounded-lg p-1">
+                        <button id="historyScopePublic" onclick="loadHistory('public')" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all">Public Feed</button>
+                        <button id="historyScopeMine" onclick="loadHistory('mine')" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all">My Scans</button>
+                    </div>
+                </div>
+                <div id="historyList" class="flex flex-col gap-3 min-h-[300px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <button id="chatToggleBtn" onclick="toggleChat()" class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg z-50 transition-transform transform hover:scale-110 hidden">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+    </button>
+    <div id="chatWindow" class="fixed bottom-24 right-6 w-96 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 flex flex-col hidden overflow-hidden transform transition-all">
+        <div class="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center z-10">
+            <h3 class="text-blue-600 font-bold flex items-center gap-2 uppercase tracking-wider text-sm">Atlas AI Assistant</h3>
+            <button onclick="toggleChat()" class="text-gray-400 hover:text-gray-700 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="chatHistory" class="p-4 h-96 overflow-y-auto flex flex-col gap-3 font-mono text-sm bg-gray-50"></div>
+        <div class="p-3 bg-white border-t border-gray-200 flex gap-2">
+            <input type="text" id="chatInput" placeholder="Ask about the architecture..." class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 font-mono text-sm">
+            <button id="sendBtn" onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all">Send</button>
+        </div>
+    </div>
+
+    <div id="authModal" class="hidden fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="authModalTitle" class="text-xl font-black text-gray-900">Sign in</h2>
+                    <button onclick="closeAuthModal()" class="text-gray-400 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div id="authError" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4"></div>
+                <div class="flex flex-col gap-3">
+                    <input id="authEmail" type="email" placeholder="Email" autocomplete="email"
+                        class="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <input id="authUsername" type="text" placeholder="Username (optional)" autocomplete="username"
+                        class="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password"
+                        class="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <button id="authSubmitBtn" onclick="submitAuth()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all">Sign in</button>
+                    <p class="text-center text-sm text-gray-500">
+                        <span id="authToggleText">Don't have an account?</span>
+                        <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-blue-600 font-bold hover:underline">Sign up</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        // If this page is opened directly as a file (file:///...) instead of
+        // through the running server, relative fetch('/api/...') calls would
+        // resolve against the filesystem and fail with a confusing CORS/
+        // protocol error. Falling back to an absolute localhost URL in that
+        // case means the dashboard still works either way - no need to
+        // remember "always open via http://localhost:5001".
+        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:5001' : '';
+
+        let authToken = localStorage.getItem('codeatlas_token') || null;
+        let currentUser = null;
+        try { currentUser = JSON.parse(localStorage.getItem('codeatlas_user') || 'null'); } catch { currentUser = null; }
+        let currentScanId = null;
+        let currentRepoFullName = null;
+        let currentScanData = null;
+        let historyScope = 'public';
+        let authMode = 'login';
+
+        // --- SECURITY: escape any text pulled from a scanned repo / GitHub
+        // before it's inserted via innerHTML. A repo's name, description,
+        // extracted class/function names, API routes, and AST labels are
+        // all attacker-controllable content (anyone can push code or set a
+        // repo description) - never trust it as raw HTML.
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function authHeaders() {
+            return authToken ? { 'Authorization': 'Bearer ' + authToken } : {};
+        }
+
+        // --- ACCOUNT / AUTH UI ---
+        function renderAccountUI() {
+            const el = document.getElementById('accountWidget');
+            if (currentUser) {
+                el.innerHTML = `
+                    <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-md px-3 py-1.5 shadow-sm">
+                        <span class="text-xs font-mono text-gray-500">👤 ${escapeHtml(currentUser.username || currentUser.email)}</span>
+                        <button onclick="logout()" class="text-xs font-bold text-red-600 hover:text-red-700">Sign out</button>
+                    </div>`;
+            } else {
+                el.innerHTML = `
+                    <button onclick="openAuthModal('login')" class="text-xs font-bold text-blue-600 hover:text-blue-700 bg-white border border-gray-200 rounded-md px-3 py-1.5 shadow-sm">
+                        Sign in to save history
+                    </button>`;
+            }
+        }
+
+        function openAuthModal(mode) {
+            authMode = mode;
+            updateAuthModalMode();
+            document.getElementById('authEmail').value = '';
+            document.getElementById('authUsername').value = '';
+            document.getElementById('authPassword').value = '';
+            document.getElementById('authError').classList.add('hidden');
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'register' : 'login';
+            updateAuthModalMode();
+        }
+        function updateAuthModalMode() {
+            const isLogin = authMode === 'login';
+            document.getElementById('authModalTitle').innerText = isLogin ? 'Sign in' : 'Create account';
+            document.getElementById('authSubmitBtn').innerText = isLogin ? 'Sign in' : 'Create account';
+            document.getElementById('authToggleText').innerText = isLogin ? "Don't have an account?" : "Already have an account?";
+            document.getElementById('authToggleBtn').innerText = isLogin ? 'Sign up' : 'Sign in';
+            document.getElementById('authUsername').classList.toggle('hidden', isLogin);
+        }
+        async function submitAuth() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const username = document.getElementById('authUsername').value.trim();
+            const errorBox = document.getElementById('authError');
+            errorBox.classList.add('hidden');
+
+            const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+            const body = authMode === 'login' ? { email, password } : { email, password, username };
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+                authToken = data.token;
+                currentUser = data.user;
+                localStorage.setItem('codeatlas_token', authToken);
+                localStorage.setItem('codeatlas_user', JSON.stringify(currentUser));
+                renderAccountUI();
+                closeAuthModal();
+            } catch (err) {
+                errorBox.innerText = err.message;
+                errorBox.classList.remove('hidden');
+            }
+        }
+        function logout() {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('codeatlas_token');
+            localStorage.removeItem('codeatlas_user');
+            renderAccountUI();
+            const historyTab = document.getElementById('tab-history');
+            if (historyTab && !historyTab.classList.contains('hidden')) loadHistory('public');
+        }
+
+        // --- NAVIGATION CONTROLLER ---
+        function switchTab(activeTabId) {
+            const allTabs = document.querySelectorAll('.tab-content');
+            allTabs.forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('flex');
+            });
+
+            const activeTab = document.getElementById(activeTabId);
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+                activeTab.classList.add('flex');
+            }
+
+            // The AST panel is rendered while hidden (display:none, so
+            // clientWidth is 0), which would make astZoomFit() shrink the
+            // diagram to nothing - recompute the fit now that it's visible.
+            // Only relevant in graph mode - the text tree has no zoom/transform.
+            if (activeTabId === 'tab-ast' && astViewMode === 'graph' && astTabZoom.hasContent()) {
+                requestAnimationFrame(astZoomFit);
+            }
+            // Same problem for the Architecture tab's tree toggle.
+            if (activeTabId === 'tab-architecture' && architectureView === 'tree' && archTreeZoom.hasContent()) {
+                requestAnimationFrame(archTreeZoomFit);
+            }
+
+            const buttons = ['btn-portfolio', 'btn-overview', 'btn-architecture', 'btn-logic', 'btn-api', 'btn-ast', 'btn-repo', 'btn-history'];
+            buttons.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) btn.className = "flex-1 min-w-[120px] py-3 px-4 rounded-lg hover:bg-gray-100 text-gray-600 font-bold transition-all";
+            });
+
+            const activeBtnId = 'btn-' + activeTabId.replace('tab-', '');
+            const activeBtn = document.getElementById(activeBtnId);
+            if (activeBtn) {
+                activeBtn.className = "flex-1 min-w-[120px] py-3 px-4 rounded-lg bg-blue-600 text-white font-bold transition-all shadow-md";
+            }
+        }
+
+        // --- ZOOM CONTROLS (reusable for both the AST tab and the
+        // Architecture tab's tree toggle) ---
+        // Each tree viewer gets its own controller instance so zooming one
+        // never affects the other's state. `containerId` holds the SVG and
+        // gets the CSS transform; `wrapperId` is the scrollable panel used
+        // to compute a "fit to screen" scale; `labelId` shows the %.
+        function createZoomController(containerId, wrapperId, labelId) {
+            let zoomLevel = 1;
+            let nativeWidth = 0;
+            let nativeHeight = 0;
+
+            function apply() {
+                const container = document.getElementById(containerId);
+                const label = document.getElementById(labelId);
+                if (!container) return;
+                container.style.transform = `scale(${zoomLevel})`;
+                if (label) label.innerText = `${Math.round(zoomLevel * 100)}%`;
+            }
+
+            return {
+                setNativeSize(w, h) { nativeWidth = w; nativeHeight = h; },
+                in() { zoomLevel = Math.min(zoomLevel + 0.15, 3); apply(); },
+                out() { zoomLevel = Math.max(zoomLevel - 0.15, 0.1); apply(); },
+                // Scales the whole diagram down (never up past 100%) so
+                // it's fully visible inside the viewer on first render,
+                // rather than requiring the user to scroll to see the
+                // edges of a large tree.
+                fit() {
+                    const wrapper = document.getElementById(wrapperId);
+                    if (!wrapper || !nativeWidth || !nativeHeight) {
+                        zoomLevel = 1;
+                        apply();
+                        return;
+                    }
+                    const availW = wrapper.clientWidth - 48;
+                    const availH = wrapper.clientHeight - 48;
+                    const scale = Math.min(availW / nativeWidth, availH / nativeHeight, 1);
+                    zoomLevel = Math.max(scale, 0.1);
+                    apply();
+                },
+                hasContent() { return nativeWidth > 0; },
+            };
+        }
+
+        const astTabZoom = createZoomController('astContainer', 'astScrollWrapper', 'astZoomLabel');
+        const archTreeZoom = createZoomController('archAstContainer', 'archAstScrollWrapper', 'archZoomLabel');
+
+        function astZoomIn() { astTabZoom.in(); }
+        function astZoomOut() { astTabZoom.out(); }
+        function astZoomFit() { astTabZoom.fit(); }
+
+        function archTreeZoomIn() { archTreeZoom.in(); }
+        function archTreeZoomOut() { archTreeZoom.out(); }
+        function archTreeZoomFit() { archTreeZoom.fit(); }
+
+        // The tree data from the most recent analysis, kept around so the
+        // Architecture tab's "AST Tree" toggle can (re)render it on demand
+        // without re-fetching anything.
+        let lastAstTreeRoot = null;
+
+        // --- ARCHITECTURE TAB: GRAPH / TREE TOGGLE ---
+        // The Architecture tab shows either the Mermaid dependency graph or
+        // the same AST tree diagram used in the AST tab, switched via two
+        // buttons rather than making people jump between tabs to see both.
+        let architectureView = 'graph';
+
+        function setArchView(view) {
+            architectureView = view;
+            const graphBtn = document.getElementById('archViewGraphBtn');
+            const treeBtn = document.getElementById('archViewTreeBtn');
+            const graphPanel = document.getElementById('archGraphPanel');
+            const treePanel = document.getElementById('archTreePanel');
+            const zoomControls = document.getElementById('archZoomControls');
+            const ACTIVE = "px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-blue-600 text-white shadow-sm";
+            const INACTIVE = "px-3 py-1.5 rounded-md text-xs font-bold transition-all text-gray-600 hover:bg-gray-200";
+
+            if (view === 'tree') {
+                graphPanel.classList.add('hidden');
+                treePanel.classList.remove('hidden');
+                zoomControls.classList.remove('hidden');
+                zoomControls.classList.add('flex');
+                treeBtn.className = ACTIVE;
+                graphBtn.className = INACTIVE;
+                renderArchTree();
+            } else {
+                treePanel.classList.add('hidden');
+                graphPanel.classList.remove('hidden');
+                zoomControls.classList.add('hidden');
+                zoomControls.classList.remove('flex');
+                graphBtn.className = ACTIVE;
+                treeBtn.className = INACTIVE;
+            }
+        }
+
+        // Renders lastAstTreeRoot into the Architecture tab's tree panel
+        // (a no-op visually unless that panel is the active view, but safe
+        // to call any time - e.g. right after a new scan finishes).
+        function renderArchTree() {
+            const container = document.getElementById('archAstContainer');
+            if (!container) return;
+            if (!lastAstTreeRoot) {
+                archTreeZoom.setNativeSize(0, 0);
+                container.innerHTML = `<p class="text-gray-500 italic mt-4 ml-4">No source file was suitable for structural parsing.</p>`;
+                return;
+            }
+            const rendered = renderASTTree(lastAstTreeRoot);
+            container.innerHTML = rendered.svg;
+            archTreeZoom.setNativeSize(rendered.width, rendered.height);
+            if (architectureView === 'tree') {
+                requestAnimationFrame(archTreeZoomFit);
+            }
+        }
+
+        // --- AST TAB: TEXT TREE / NODE GRAPH TOGGLE ---
+        // The AST tab itself can show either an indented text tree (easier
+        // to scan top-to-bottom and read long names) or the SVG node-link
+        // diagram (easier to see overall shape at a glance) - both work off
+        // the same lastAstTreeRoot, so toggling never needs a re-fetch.
+        let astViewMode = 'tree';
+
+        function setAstViewMode(mode) {
+            astViewMode = mode;
+            const activeCls = 'px-3 h-7 rounded text-xs font-bold transition-all bg-blue-600 text-white';
+            const inactiveCls = 'px-3 h-7 rounded text-xs font-bold transition-all text-gray-700 hover:bg-gray-200';
+            const treeBtn = document.getElementById('astViewBtnTree');
+            const graphBtn = document.getElementById('astViewBtnGraph');
+            if (treeBtn) treeBtn.className = mode === 'tree' ? activeCls : inactiveCls;
+            if (graphBtn) graphBtn.className = mode === 'graph' ? activeCls : inactiveCls;
+            renderCurrentAstView();
+        }
+
+        // Renders lastAstTreeRoot into the AST tab's own container according
+        // to astViewMode - zoom controls only make sense for the node-link
+        // graph, so they're hidden in text-tree mode.
+        function renderCurrentAstView() {
+            const astContainer = document.getElementById('astContainer');
+            const zoomControls = document.getElementById('astZoomControls');
+            if (!astContainer) return;
+
+            if (!lastAstTreeRoot) {
+                if (zoomControls) { zoomControls.classList.add('hidden'); zoomControls.classList.remove('flex'); }
+                astContainer.style.transform = 'none';
+                astTabZoom.setNativeSize(0, 0);
+                astContainer.innerHTML = `<p class="text-gray-500 italic mt-4 ml-4">No source file was suitable for structural parsing.</p>`;
+                return;
+            }
+
+            if (astViewMode === 'tree') {
+                if (zoomControls) { zoomControls.classList.add('hidden'); zoomControls.classList.remove('flex'); }
+                astContainer.style.transform = 'none';
+                astContainer.innerHTML = renderASTTextTree(lastAstTreeRoot);
+            } else {
+                if (zoomControls) { zoomControls.classList.remove('hidden'); zoomControls.classList.add('flex'); }
+                const rendered = renderASTTree(lastAstTreeRoot);
+                astContainer.innerHTML = rendered.svg;
+                astTabZoom.setNativeSize(rendered.width, rendered.height);
+                astZoomFit();
+            }
+        }
+
+        // --- AST TREE RENDERER (SVG node-link diagram) ---
+        // Nodes from the backend are {name, children} (see analyzer/astParser.js),
+        // which now builds a structural tree for ANY supported language - a real
+        // AST via acorn for JS/TS, or a heuristic block tree (indentation-based
+        // for Python/Ruby, brace-matching for everything else) otherwise. This
+        // renders that tree as circles connected by lines rather than an
+        // indented text list: a simple layout pass gives every node an (x, y)
+        // slot - leaves get sequential x positions, each parent centers over
+        // its children, depth maps directly to y - then edges and circles are
+        // drawn from those coordinates. Returns {svg, width, height} so the
+        // caller's zoom controller can fit it to whichever panel it's shown in.
+        function renderASTTree(root) {
+            const SPACING_X = 76;
+            const SPACING_Y = 88;
+            const RADIUS = 24;
+            const PADDING = 50;
+
+            let nextX = 0;
+            let maxDepth = 0;
+
+            function assignSlot(node, depth) {
+                node._depth = depth;
+                maxDepth = Math.max(maxDepth, depth);
+                if (!node.children || node.children.length === 0) {
+                    node._x = nextX++;
+                    return;
+                }
+                node.children.forEach(child => assignSlot(child, depth + 1));
+                node._x = (node.children[0]._x + node.children[node.children.length - 1]._x) / 2;
+            }
+            assignSlot(root, 0);
+
+            function assignPixels(node) {
+                node._px = PADDING + node._x * SPACING_X;
+                node._py = PADDING + node._depth * SPACING_Y;
+                (node.children || []).forEach(assignPixels);
+            }
+            assignPixels(root);
+
+            const width = Math.max(nextX * SPACING_X + PADDING * 2, 300);
+            const height = (maxDepth + 1) * SPACING_Y + PADDING * 2;
+
+            // Nodes carry a `type` (root/directory/file/class/function/method/
+            // field/block/def/truncated) from the backend - color by that so
+            // directories, files, and actual symbols read as distinct at a
+            // glance, rather than every node looking the same.
+            const NODE_COLORS = {
+                root: { fill: '#1e293b', stroke: '#94a3b8' },
+                directory: { fill: '#312e81', stroke: '#818cf8' },
+                file: { fill: '#134e4a', stroke: '#5eead4' },
+                class: { fill: '#4c1d95', stroke: '#c4b5fd' },
+                method: { fill: '#065f46', stroke: '#6ee7b7' },
+                function: { fill: '#065f46', stroke: '#6ee7b7' },
+                field: { fill: '#78350f', stroke: '#fcd34d' },
+                truncated: { fill: '#1f2937', stroke: '#6b7280' },
+                default: { fill: '#1e1b4b', stroke: '#a78bfa' },
+            };
+
+            /** Builds the full hover text for a node: its kind, its rich
+             * "detail" string from the backend (params/kind/line context),
+             * and its source line if known - not just the bare label that's
+             * already visible on the circle. */
+            function buildTooltip(node) {
+                const lines = [];
+                const kind = node.type ? node.type.toUpperCase() : 'NODE';
+                lines.push(`[${kind}] ${node.name || '?'}`);
+                if (node.detail && node.detail !== node.name) lines.push(node.detail);
+                if (node.line) lines.push(`Line ${node.line}`);
+                return lines.join('\n');
+            }
+
+            let edgesSvg = '';
+            let nodesSvg = '';
+
+            function walk(node) {
+                (node.children || []).forEach(child => {
+                    edgesSvg += `<line x1="${node._px}" y1="${node._py}" x2="${child._px}" y2="${child._py}" stroke="#4c1d95" stroke-width="2"/>`;
+                });
+
+                const rawName = String(node.name || '?');
+                const shortLabel = rawName.length > 8 ? rawName.slice(0, 7) + '…' : rawName;
+                const colors = NODE_COLORS[node.type] || NODE_COLORS.default;
+                const tooltip = buildTooltip(node);
+
+                nodesSvg += `
+                    <g>
+                        <title>${escapeHtml(tooltip)}</title>
+                        <circle cx="${node._px}" cy="${node._py}" r="${RADIUS}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="2"/>
+                        <text x="${node._px}" y="${node._py}" text-anchor="middle" dominant-baseline="middle" fill="#e9d5ff" font-size="9" font-family="monospace" font-weight="bold">${escapeHtml(shortLabel)}</text>
+                    </g>`;
+
+                (node.children || []).forEach(walk);
+            }
+            walk(root);
+
+            return { svg: `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="display:block">${edgesSvg}${nodesSvg}</svg>`, width, height };
+        }
+
+        // --- AST TEXT TREE RENDERER (indented, classic `tree`-style) ---
+        // Same {name, type, detail, line, children} nodes as renderASTTree()
+        // above, just laid out as nested indented lines with box-drawing
+        // connectors instead of circles-and-edges - easier to scan top-to-
+        // bottom and to read long names in, at the cost of not showing
+        // overall shape at a glance the way the graph does.
+        const AST_TYPE_STYLE = {
+            root: { color: '#cbd5e1', icon: '📦' },
+            directory: { color: '#a5b4fc', icon: '📁' },
+            file: { color: '#5eead4', icon: '📄' },
+            class: { color: '#c4b5fd', icon: '🏛' },
+            method: { color: '#6ee7b7', icon: 'ƒ' },
+            function: { color: '#6ee7b7', icon: 'ƒ' },
+            field: { color: '#fcd34d', icon: '▪' },
+            truncated: { color: '#6b7280', icon: '…' },
+            default: { color: '#a78bfa', icon: '•' },
+        };
+
+        function renderASTTextTree(root) {
+            let html = '';
+
+            function renderNode(node, prefix, isLast, isRoot) {
+                const style = AST_TYPE_STYLE[node.type] || AST_TYPE_STYLE.default;
+                const connector = isRoot ? '' : (isLast ? '└── ' : '├── ');
+                const label = escapeHtml(String(node.name || '?'));
+                const lineInfo = node.line ? `<span style="color:#6b7280">&nbsp;:${node.line}</span>` : '';
+                const tooltip = node.detail ? escapeHtml(node.detail) : escapeHtml(String(node.name || ''));
+
+                html += `<div class="whitespace-pre" title="${tooltip}">` +
+                    `<span style="color:#475569">${escapeHtml(prefix + connector)}</span>` +
+                    `<span style="color:${style.color}" class="font-bold">${style.icon} ${label}</span>${lineInfo}` +
+                    `</div>`;
+
+                const children = node.children || [];
+                children.forEach((child, i) => {
+                    const childPrefix = isRoot ? '' : prefix + (isLast ? '    ' : '│   ');
+                    renderNode(child, childPrefix, i === children.length - 1, false);
+                });
+            }
+
+            renderNode(root, '', true, true);
+            return `<div class="text-sm leading-relaxed">${html}</div>`;
+        }
+
+        // --- REPO STRUCTURE TAB: folder/file tree, branches, commits, PRs, metadata ---
+        // repo_tree nodes are {name, type: 'folder'|'file', path, children?, file_count?}
+        // (see analyzer/repoTree.js) - rendered the same indented box-drawing
+        // style as the AST text tree above, just for the real repo layout.
+        function renderRepoTreeText(root) {
+            let html = '';
+
+            function renderNode(node, prefix, isLast, isRoot) {
+                const isFolder = node.type === 'folder';
+                const icon = isFolder ? '📁' : '📄';
+                const connector = isRoot ? '' : (isLast ? '└── ' : '├── ');
+                const countBadge = (isFolder && typeof node.file_count === 'number')
+                    ? `<span style="color:#6b7280">&nbsp;(${node.file_count} file${node.file_count === 1 ? '' : 's'})</span>`
+                    : '';
+
+                html += `<div class="whitespace-pre" title="${escapeHtml(node.path || node.name)}">` +
+                    `<span style="color:#475569">${escapeHtml(prefix + connector)}</span>` +
+                    `<span style="color:${isFolder ? '#a5b4fc' : '#5eead4'}" class="font-bold">${icon} ${escapeHtml(node.name)}</span>${countBadge}` +
+                    `</div>`;
+
+                const children = node.children || [];
+                children.forEach((child, i) => {
+                    const childPrefix = isRoot ? '' : prefix + (isLast ? '    ' : '│   ');
+                    renderNode(child, childPrefix, i === children.length - 1, false);
+                });
+            }
+
+            renderNode(root, '', true, true);
+            return `<div class="text-sm leading-relaxed">${html}</div>`;
+        }
+
+        function renderRepoStructureTab(analysis) {
+            const repoTree = analysis.repo_tree;
+            document.getElementById('repoTreeCounts').innerText =
+                `${repoTree?.total_files ?? 0} / ${repoTree?.total_folders ?? 0}`;
+            document.getElementById('repoTreeContainer').innerHTML = (repoTree && repoTree.tree)
+                ? renderRepoTreeText(repoTree.tree)
+                : `<p class="text-gray-500 italic">No file tree available for this scan.</p>`;
+
+            // Branches
+            const branches = analysis.branches || {};
+            const branchArr = branches.branches || [];
+            document.getElementById('repoBranchCount').innerText = branches.total_branches ?? branchArr.length;
+            document.getElementById('branchListCount').innerText = branchArr.length;
+            let branchHtml = branches.available === false
+                ? `<p class="text-gray-500 text-sm italic">Branches unavailable (rate-limited or network error).</p>`
+                : branchArr.length
+                    ? branchArr.map(b => `
+                        <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono">
+                            <span class="font-bold text-gray-700">${escapeHtml(b.name)}${b.protected ? ' 🔒' : ''}</span>
+                            <span class="text-gray-400">${escapeHtml((b.commit_sha || '').slice(0, 7))}</span>
+                        </div>`).join('')
+                    : `<p class="text-gray-500 text-sm italic">No branches found.</p>`;
+            if (branches.truncated) branchHtml += `<p class="text-gray-400 text-xs italic px-1 pt-1">Showing the first 100 branches only.</p>`;
+            document.getElementById('branchList').innerHTML = branchHtml;
+
+            // Commits
+            const commits = analysis.commits || {};
+            const recentCommits = commits.recent || [];
+            document.getElementById('repoCommitCount').innerText = commits.total_commits ?? 0;
+            document.getElementById('commitListCount').innerText = recentCommits.length;
+            document.getElementById('commitList').innerHTML = commits.available === false
+                ? `<p class="text-gray-500 text-sm italic">Commits unavailable (rate-limited or network error).</p>`
+                : recentCommits.length
+                    ? recentCommits.map(c => `
+                        <div class="flex flex-col bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs">
+                            <div class="flex justify-between items-baseline gap-2">
+                                <span class="font-mono font-bold text-blue-700">${escapeHtml(c.sha || '')}</span>
+                                <span class="text-gray-400">${c.date ? new Date(c.date).toLocaleDateString() : ''}</span>
+                            </div>
+                            <span class="text-gray-700 truncate" title="${escapeHtml(c.message || '')}">${escapeHtml(c.message || '')}</span>
+                            <span class="text-gray-400">by ${escapeHtml(c.author || 'unknown')}</span>
+                        </div>`).join('')
+                    : `<p class="text-gray-500 text-sm italic">No commits found.</p>`;
+
+            // Pull requests
+            const pr = analysis.pull_requests || {};
+            const prArr = pr.pull_requests || [];
+            const counts = pr.counts || { open: 0, closed: 0, merged: 0 };
+            document.getElementById('repoPrCounts').innerText =
+                `${counts.open || 0} open · ${counts.merged || 0} merged · ${counts.closed || 0} closed`;
+            document.getElementById('prListCount').innerText = prArr.length;
+            let prHtml = pr.available === false
+                ? `<p class="text-gray-500 text-sm italic">Pull requests unavailable (rate-limited or network error).</p>`
+                : prArr.length
+                    ? prArr.map(p => {
+                        const stateColor = p.state === 'open' ? 'bg-green-100 text-green-700'
+                            : p.state === 'merged' ? 'bg-purple-100 text-purple-700'
+                            : 'bg-gray-200 text-gray-600';
+                        return `<div class="flex flex-col bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs">
+                            <div class="flex justify-between items-center gap-2">
+                                <span class="font-bold text-gray-700 truncate">#${p.number} ${escapeHtml(p.title)}</span>
+                                <span class="px-2 py-0.5 rounded-full font-bold shrink-0 ${stateColor}">${escapeHtml(p.state)}</span>
+                            </div>
+                            <span class="text-gray-400 font-mono">${escapeHtml(p.source_branch || '?')} → ${escapeHtml(p.target_branch || '?')} · by ${escapeHtml(p.author || 'unknown')}</span>
+                        </div>`;
+                    }).join('')
+                    : `<p class="text-gray-500 text-sm italic">No pull requests found.</p>`;
+            if (pr.truncated) prHtml += `<p class="text-gray-400 text-xs italic px-1 pt-1">Showing the first 100 pull requests only.</p>`;
+            document.getElementById('prList').innerHTML = prHtml;
+
+            // Metadata
+            const meta = analysis.repo_metadata || {};
+            const metaGrid = document.getElementById('repoMetaGrid');
+            if (meta.available === false) {
+                metaGrid.innerHTML = `<p class="text-gray-500 text-sm italic col-span-4">Metadata unavailable for this scan.</p>`;
+            } else {
+                const rows = [
+                    ['⭐ Stars', meta.stars],
+                    ['🍴 Forks', meta.forks],
+                    ['👀 Watchers', meta.watchers],
+                    ['🐛 Open Issues', meta.open_issues],
+                    ['📦 Size', meta.size_kb != null ? `${meta.size_kb} KB` : null],
+                    ['📄 License', meta.license],
+                    ['🌿 Default Branch', meta.default_branch],
+                    ['🕒 Last Pushed', meta.pushed_at ? new Date(meta.pushed_at).toLocaleDateString() : null],
+                ];
+                metaGrid.innerHTML = rows.map(([label, val]) => `
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider">${label}</p>
+                        <p class="text-gray-800 font-bold font-mono text-sm truncate">${escapeHtml(val != null && val !== '' ? String(val) : 'N/A')}</p>
+                    </div>`).join('');
+            }
+        }
+
+        // --- PROFILE BATCH SCANNER ---
+        async function runProfileScan() {
+            let userInput = document.getElementById('repoUrl').value.trim();
+            const profileBtn = document.getElementById('profileBtn');
+            const loading = document.getElementById('loading');
+            const dashboard = document.getElementById('dashboard');
+            const dashboardControls = document.getElementById('dashboardControls');
+
+            if (!userInput) { alert("Please enter a GitHub username!"); return; }
+
+            if (userInput.includes("github.com/")) {
+                const parts = userInput.replace("https://", "").replace("http://", "").split("/");
+                if (parts.length >= 2) userInput = parts[1].split('?')[0];
+            }
+
+            profileBtn.disabled = true;
+            profileBtn.innerHTML = "Searching...";
+            dashboardControls.classList.add('hidden');
+            dashboard.classList.add('hidden');
+            loading.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/profile?user=${encodeURIComponent(userInput)}`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `Server returned ${response.status}`);
+
+                document.getElementById('repoCount').innerText = `${data.total_repositories} Found`;
+                const grid = document.getElementById('portfolioGrid');
+
+                if (data.repositories.length > 0) {
+                    grid.innerHTML = data.repositories.map(repo => `
+                        <div class="border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all bg-gray-50 flex flex-col justify-between shadow-sm">
+                            <div>
+                                <h3 class="font-bold text-lg text-blue-700 truncate" title="${escapeHtml(repo.name)}">${escapeHtml(repo.name)}</h3>
+                                <p class="text-sm text-gray-500 mt-2 line-clamp-2 h-10">${escapeHtml(repo.description)}</p>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-3">
+                                <div class="flex justify-between items-center text-xs font-mono text-gray-500">
+                                    <span class="bg-gray-200 px-2 py-1 rounded text-gray-700 font-bold">${escapeHtml(repo.primary_language)}</span>
+                                    <span class="font-bold">⭐ ${repo.stars}</span>
+                                </div>
+                                <button onclick="document.getElementById('repoUrl').value=${JSON.stringify(repo.full_url)}; runScan();"
+                                    class="w-full bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold py-2.5 rounded-lg transition-all text-sm border border-blue-200">
+                                    Run Deep Audit
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10 font-mono">No repositories discovered for this account.</p>`;
+                }
+
+                switchTab('tab-portfolio');
+
+                dashboardControls.classList.remove('hidden');
+                dashboard.classList.remove('hidden');
+                dashboard.classList.add('flex');
+
+            } catch (error) {
+                console.error(error);
+                alert(error.message || "Failed to fetch profile repositories. Check your network or GitHub API.");
+            } finally {
+                profileBtn.disabled = false;
+                profileBtn.innerHTML = `Find Repos`;
+                loading.classList.add('hidden');
+            }
+        }
+
+        // --- HISTORY TAB ---
+        function openHistoryTab() {
+            document.getElementById('dashboardControls').classList.remove('hidden');
+            const dashboard = document.getElementById('dashboard');
+            dashboard.classList.remove('hidden');
+            dashboard.classList.add('flex');
+            switchTab('tab-history');
+            loadHistory(historyScope);
+        }
+
+        async function loadHistory(scope) {
+            historyScope = scope;
+            document.getElementById('historyScopePublic').className = scope === 'public'
+                ? 'px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-white shadow-sm text-blue-600'
+                : 'px-3 py-1.5 rounded-md text-xs font-bold transition-all text-gray-500';
+            document.getElementById('historyScopeMine').className = scope === 'mine'
+                ? 'px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-white shadow-sm text-blue-600'
+                : 'px-3 py-1.5 rounded-md text-xs font-bold transition-all text-gray-500';
+
+            const list = document.getElementById('historyList');
+
+            if (scope === 'mine' && !authToken) {
+                list.innerHTML = `<p class="text-gray-500 text-sm text-center py-10">Sign in to see your personal scan history. <button onclick="openAuthModal('login')" class="text-blue-600 font-bold hover:underline">Sign in</button></p>`;
+                return;
+            }
+
+            list.innerHTML = `<p class="text-gray-400 text-sm text-center py-10 font-mono">Loading...</p>`;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/scans?scope=${scope}&limit=30`, { headers: authHeaders() });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to load history');
+
+                if (data.scans.length === 0) {
+                    list.innerHTML = `<p class="text-gray-500 text-sm text-center py-10">No scans yet. Run a Deep Audit to get started.</p>`;
+                    return;
+                }
+
+                const gradeColors = { A: 'text-green-600 bg-green-50', B: 'text-blue-600 bg-blue-50', C: 'text-yellow-600 bg-yellow-50' };
+
+                list.innerHTML = data.scans.map(scan => {
+                    const gradeColor = gradeColors[scan.healthGrade] || 'text-red-600 bg-red-50';
+                    const date = new Date(scan.createdAt).toLocaleString();
+                    return `
+                        <div class="flex items-center justify-between gap-4 border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all bg-gray-50">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="w-12 h-12 shrink-0 rounded-lg flex items-center justify-center font-black text-lg ${gradeColor}">${escapeHtml(scan.healthGrade)}</div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-800 truncate">${escapeHtml(scan.repository)}</p>
+                                    <p class="text-xs text-gray-500 font-mono">${scan.healthScore}/100 &middot; ${scan.filesScanned} files &middot; ${escapeHtml(date)}</p>
+                                </div>
+                            </div>
+                            <button onclick="loadScanFromHistory('${scan.id}')" class="shrink-0 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold py-2 px-4 rounded-lg transition-all text-sm border border-blue-200">
+                                View
+                            </button>
+                        </div>`;
+                }).join('');
+            } catch (err) {
+                list.innerHTML = `<p class="text-red-500 text-sm text-center py-10">${escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        async function loadScanFromHistory(scanId) {
+            const loading = document.getElementById('loading');
+            document.getElementById('dashboardControls').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            switchTab('tab-overview');
+            loading.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/scans/${encodeURIComponent(scanId)}`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to load scan.');
+                await renderScanIntoDashboard(data);
+            } catch (error) {
+                alert(error.message || 'Failed to load that scan.');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        // --- SHARED RENDERER: feeds either a fresh /api/analyze result or a
+        // historical /api/scans/:id result through the exact same dashboard
+        // rendering path, since both endpoints return the same JSON shape. ---
+        async function renderScanIntoDashboard(data) {
+            currentScanId = data.scan_id || null;
+            currentRepoFullName = data.repository || null;
+
+            currentScanData = {
+                repoUrl: data.repository,
+                audit: data.health_audit,
+                analysis: data.analysis,
+            };
+
+            const audit = data.health_audit;
+            const analysis = data.analysis;
+
+            document.getElementById('summaryDisplay').innerText = analysis.basic_summary;
+
+            const gradeEl = document.getElementById('gradeDisplay');
+            gradeEl.innerText = audit.grade;
+            document.getElementById('scoreDisplay').innerText = `${audit.score} / 100 Points`;
+
+            let colors = audit.grade === 'A' ? { text: 'text-green-600', bg: 'bg-green-500' } :
+                         audit.grade === 'B' ? { text: 'text-blue-600', bg: 'bg-blue-500' } :
+                         audit.grade === 'C' ? { text: 'text-yellow-600', bg: 'bg-yellow-500' } :
+                                               { text: 'text-red-600', bg: 'bg-red-500' };
+
+            gradeEl.className = `text-8xl font-black z-10 ${colors.text}`;
+            document.getElementById('gradeGlow').className = `absolute inset-0 opacity-10 rounded-2xl pointer-events-none ${colors.bg}`;
+            document.getElementById('cachedRow').classList.toggle('hidden', !data.cached);
+            document.getElementById('cachedRow').classList.toggle('flex', !!data.cached);
+
+            const securityAlerts = document.getElementById('securityAlerts');
+            const leakList = document.getElementById('leakList');
+            leakList.innerHTML = "";
+
+            if (analysis.security_vulnerabilities && analysis.security_vulnerabilities.length > 0) {
+                securityAlerts.classList.remove('hidden');
+                analysis.security_vulnerabilities.forEach(leak => {
+                    leakList.innerHTML += `
+                        <li class="text-red-800 text-sm bg-red-100 p-4 rounded-lg font-mono border border-red-200">
+                            <span class="font-bold text-red-900">${escapeHtml(leak.type)}</span> in <span class="text-red-700 font-bold">${escapeHtml(leak.file)}</span> (Line ${escapeHtml(String(leak.line))})<br>
+                            <span class="text-red-600 mt-2 block break-all opacity-80">${escapeHtml(leak.snippet)}</span>
+                        </li>`;
+                });
+            } else {
+                securityAlerts.classList.add('hidden');
+            }
+
+            document.getElementById('logicDisplay').innerText = analysis.business_logic;
+
+            const symbols = analysis.architecture_symbols || { classes: [], functions: [], total_classes: 0, total_functions: 0 };
+            document.getElementById('classCount').innerText = symbols.total_classes;
+            document.getElementById('functionCount').innerText = symbols.total_functions;
+
+            // Classes/functions now carry the file they were found in
+            // ({name, file}) - fall back to treating plain strings (e.g.
+            // from an older cached scan) as having no known file.
+            function symbolFile(s) { return typeof s === 'object' && s !== null ? s.file : null; }
+            function symbolName(s) { return typeof s === 'object' && s !== null ? s.name : s; }
+
+            document.getElementById('classesList').innerHTML = symbols.classes.length > 0
+                ? symbols.classes.map(c => `
+                    <span class="bg-indigo-100 text-indigo-800 pl-3 pr-2.5 py-1.5 rounded-lg text-sm font-mono border border-indigo-200 cursor-default shadow-sm inline-flex items-baseline gap-2" title="${escapeHtml(symbolFile(c) || 'Unknown file')}">
+                        ${escapeHtml(symbolName(c))}
+                        ${symbolFile(c) ? `<span class="text-[10px] text-indigo-500 font-sans font-normal">${escapeHtml(symbolFile(c).split('/').pop())}</span>` : ''}
+                    </span>`).join('')
+                : `<p class="text-gray-500 text-sm w-full text-center mt-4">No structural classes detected.</p>`;
+
+            document.getElementById('functionsList').innerHTML = symbols.functions.length > 0
+                ? symbols.functions.map(f => `
+                    <span class="bg-teal-100 text-teal-800 pl-3 pr-2.5 py-1.5 rounded-lg text-sm font-mono border border-teal-200 cursor-default shadow-sm inline-flex items-baseline gap-2" title="${escapeHtml(symbolFile(f) || 'Unknown file')}">
+                        ${escapeHtml(symbolName(f))}()
+                        ${symbolFile(f) ? `<span class="text-[10px] text-teal-500 font-sans font-normal">${escapeHtml(symbolFile(f).split('/').pop())}</span>` : ''}
+                    </span>`).join('')
+                : `<p class="text-gray-500 text-sm w-full text-center mt-4">No explicit operations detected.</p>`;
+
+            // Files Accessed - every source file the scan actually walked
+            // and parsed, so it's clear what was read to produce the rest
+            // of this tab. Capped server-side for huge repos; the count
+            // badge still reflects the true total.
+            const scannedFiles = analysis.scanned_files || [];
+            document.getElementById('fileAccessCount').innerText = analysis.files || scannedFiles.length;
+            let filesAccessedHtml = scannedFiles.length > 0
+                ? scannedFiles.map(f => `
+                    <span class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-mono border border-blue-200 cursor-default shadow-sm" title="${escapeHtml(f)}">
+                        ${escapeHtml(f)}
+                    </span>`).join('')
+                : `<p class="text-gray-500 text-sm w-full text-center mt-4">No files were accessed for this scan.</p>`;
+            if (analysis.scanned_files_truncated) {
+                filesAccessedHtml += `<span class="text-gray-400 text-xs italic px-2 py-1.5">+ ${(analysis.files - scannedFiles.length)} more not shown</span>`;
+            }
+            document.getElementById('filesAccessedList').innerHTML = filesAccessedHtml;
+
+            const apiRoutes = analysis.api_endpoints || [];
+            document.getElementById('apiCount').innerText = apiRoutes.length;
+            const apiTableBody = document.getElementById('apiTableBody');
+
+            if (apiRoutes.length > 0) {
+                apiTableBody.innerHTML = apiRoutes.map(route => {
+                    let methodColor = 'bg-gray-100 text-gray-700';
+                    if (route.method === 'GET') methodColor = 'bg-green-100 text-green-700';
+                    if (route.method === 'POST') methodColor = 'bg-blue-100 text-blue-700';
+                    if (route.method === 'DELETE') methodColor = 'bg-red-100 text-red-700';
+                    if (route.method === 'PUT' || route.method === 'PATCH') methodColor = 'bg-yellow-100 text-yellow-700';
+
+                    return `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="p-4 whitespace-nowrap"><span class="px-3 py-1 rounded-md text-xs font-bold font-mono ${methodColor}">${escapeHtml(route.method)}</span></td>
+                            <td class="p-4 font-mono text-sm text-gray-800 font-bold">${escapeHtml(route.endpoint)}</td>
+                            <td class="p-4 font-mono text-xs text-gray-500">${escapeHtml(route.file)}</td>
+                        </tr>`;
+                }).join('');
+            } else {
+                apiTableBody.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-gray-500 font-mono text-sm">No standard REST API routes parsed.</td></tr>`;
+            }
+
+            const astData = analysis.ast_structure;
+            lastAstTreeRoot = (astData && astData.tree) ? astData.tree : null;
+
+            document.getElementById('astTargetFile').innerText = (astData && astData.tree)
+                ? `Target: ${astData.target_file}`
+                : `No Target Found`;
+            // Renders into whichever of the two AST tab views (text tree /
+            // node graph) is currently selected.
+            renderCurrentAstView();
+
+            // Keep the Architecture tab's toggle-able tree view in sync too,
+            // in case it's currently the active view for this scan.
+            renderArchTree();
+
+            renderRepoStructureTab(analysis);
+
+            await generateFlowchart(data.repository, analysis);
+            await renderTrendSparkline(data.repository);
+
+            document.getElementById('chatToggleBtn').classList.remove('hidden');
+            document.getElementById('chatHistory').innerHTML = '';
+            appendChatBubble('assistant', 'Analysis complete. Repository index mapped to my context window. What questions do you have regarding the implementation?');
+
+            document.getElementById('dashboardControls').classList.remove('hidden');
+            const dashboard = document.getElementById('dashboard');
+            dashboard.classList.remove('hidden');
+            dashboard.classList.add('flex');
+
+            // Refresh the history feed in the background so a just-completed
+            // scan shows up immediately if the person flips over to it.
+            loadHistory(historyScope).catch(() => {});
+        }
+
+        // --- SINGLE REPO SCANNER ---
+        async function runScan(forceRefresh = false) {
+            const urlInput = document.getElementById('repoUrl').value.trim();
+            const scanBtn = document.getElementById('scanBtn');
+            const loading = document.getElementById('loading');
+            const dashboard = document.getElementById('dashboard');
+            const dashboardControls = document.getElementById('dashboardControls');
+            const chatToggleBtn = document.getElementById('chatToggleBtn');
+            const chatWindow = document.getElementById('chatWindow');
+
+            if (!urlInput) { alert("Please enter or select a specific GitHub repository URL!"); return; }
+
+            switchTab('tab-overview');
+            scanBtn.disabled = true;
+            scanBtn.innerText = "Analyzing...";
+            dashboardControls.classList.add('hidden');
+            dashboard.classList.add('hidden');
+            loading.classList.remove('hidden');
+            chatToggleBtn.classList.add('hidden');
+            chatWindow.classList.add('hidden');
+
+            try {
+                const qs = new URLSearchParams({ url: urlInput });
+                if (forceRefresh) qs.set('force', 'true');
+
+                const response = await fetch(`${API_BASE}/api/analyze?${qs.toString()}`, { headers: authHeaders() });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `Server returned ${response.status}`);
+
+                await renderScanIntoDashboard(data);
+            } catch (error) {
+                console.error(error);
+                alert(error.message || "Deep analysis failed! Verify your Express backend server is running and your codebase is valid.");
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.innerText = "Deep Audit";
+                loading.classList.add('hidden');
+            }
+        }
+        function forceRescan() {
+            if (!currentRepoFullName) return;
+            document.getElementById('repoUrl').value = currentRepoFullName;
+            runScan(true);
+        }
+
+        // --- SCORE TREND SPARKLINE ---
+        async function renderTrendSparkline(fullName) {
+            const container = document.getElementById('trendSparkline');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!fullName || !fullName.includes('/')) return;
+
+            const [owner, repo] = fullName.split('/');
+            try {
+                const res = await fetch(`${API_BASE}/api/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/history`);
+                const data = await res.json();
+                if (!res.ok || !data.history || data.history.length < 2) return; // nothing to compare yet
+
+                const scores = data.history.map(h => h.healthScore);
+                const w = 240, h = 56, pad = 6;
+                const min = Math.min(...scores), max = Math.max(...scores);
+                const range = Math.max(max - min, 1);
+                const points = scores.map((s, i) => {
+                    const x = pad + (i / (scores.length - 1)) * (w - pad * 2);
+                    const y = h - pad - ((s - min) / range) * (h - pad * 2);
+                    return `${x.toFixed(1)},${y.toFixed(1)}`;
+                }).join(' ');
+
+                const trendUp = scores[scores.length - 1] >= scores[0];
+                const strokeColor = trendUp ? '#16a34a' : '#dc2626';
+
+                container.innerHTML = `
+                    <p class="text-[10px] text-gray-400 font-mono mb-1 text-center">SCORE TREND (${scores.length} scans)</p>
+                    <svg viewBox="0 0 ${w} ${h}" class="w-full h-14">
+                        <polyline points="${points}" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>`;
+            } catch (err) {
+                // Trend is a nice-to-have; fail silently rather than disrupting the dashboard.
+            }
+        }
+
+        // --- EXPORT REPORT ---
+        function downloadReport() {
+            if (!currentScanData) return;
+            const { repoUrl, audit, analysis } = currentScanData;
+
+            let md = `# CodeAtlas Audit Report\n\n`;
+            md += `**Repository:** ${repoUrl}\n`;
+            md += `**Health Grade:** ${audit.grade} (${audit.score}/100)\n`;
+            md += `**Files Scanned:** ${analysis.files}\n\n`;
+            md += `## Summary\n${analysis.basic_summary}\n\n`;
+            md += `## Business Logic\n${analysis.business_logic}\n\n`;
+            md += `## Strengths\n` + (audit.strengths.length ? audit.strengths.map(s => `- ${s}`).join('\n') : '_None recorded._') + `\n\n`;
+            md += `## Warnings\n` + (audit.warnings.length ? audit.warnings.map(w => `- ${w}`).join('\n') : '_None recorded._') + `\n\n`;
+
+            if (analysis.security_vulnerabilities.length > 0) {
+                md += `## Security Vulnerabilities\n`;
+                analysis.security_vulnerabilities.forEach(v => { md += `- **${v.type}** (${v.severity}) in \`${v.file}\` line ${v.line}\n`; });
+                md += `\n`;
+            }
+            if (analysis.api_endpoints.length > 0) {
+                md += `## API Endpoints\n`;
+                analysis.api_endpoints.forEach(e => { md += `- \`${e.method}\` ${e.endpoint} (${e.file})\n`; });
+                md += `\n`;
+            }
+            if (analysis.database_tables.length > 0) {
+                md += `## Database Models\n`;
+                analysis.database_tables.forEach(t => { md += `- ${t.table_name} (${t.database_type})\n`; });
+                md += `\n`;
+            }
+            md += `## Frameworks & Technologies\n` + (analysis.frameworks.length ? analysis.frameworks.join(', ') : '_None detected._') + `\n`;
+
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `codeatlas-${String(repoUrl || 'report').replace(/[^a-z0-9-_]/gi, '_')}.md`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        // --- VISUAL ARCHITECTURE ENGINE (WITH SANITIZER FIX) ---
+        async function generateFlowchart(repoName, analysis) {
+            // Scrub out any special characters that break Mermaid syntax!
+            const cleanText = (str) => String(str).replace(/["'\[\]{}()]/g, '').trim();
+
+            let m = 'graph TD\n';
+            m += `Repo["📁 ${cleanText(repoName)}"]\n`;
+
+            if (analysis.frameworks && analysis.frameworks.length > 0) {
+                m += `Repo --> Frameworks{"⚙️ Frameworks"}\n`;
+                analysis.frameworks.forEach((fw, i) => {
+                    m += `Frameworks --> F${i}["${cleanText(fw)}"]\n`;
+                    m += `style F${i} fill:#eff6ff,stroke:#3b82f6,color:#1e3a8a,rx:5\n`;
+                });
+            }
+
+            if (analysis.database_tables && analysis.database_tables.length > 0) {
+                m += `Repo --> DB{"🗄️ Database Schemas"}\n`;
+                const uniqueTables = [...new Set(analysis.database_tables.map(t => t.table_name))];
+                uniqueTables.slice(0, 6).forEach((table, i) => {
+                    m += `DB --> D${i}[("${cleanText(table)}")]\n`;
+                    m += `style D${i} fill:#f0fdf4,stroke:#22c55e,color:#14532d\n`;
+                });
+            }
+
+            m += `Repo --> Stats["📄 ${analysis.files} Files Scanned"]\n`;
+
+            try {
+                const display = document.getElementById('mermaidDisplay');
+                display.innerHTML = '';
+                const { svg } = await mermaid.render('architectureGraph_' + Date.now(), m);
+                display.innerHTML = svg;
+            } catch (e) {
+                console.error("Mermaid parsing issue:", e);
+                document.getElementById('mermaidDisplay').innerHTML = `
+                    <div class="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 w-full text-center">
+                        <p class="font-bold text-sm">⚠️ Flowchart Generation Blocked</p>
+                        <p class="text-xs font-mono mt-1 opacity-80">The AI returned a special character that broke the graph syntax.</p>
+                    </div>`;
+            }
+        }
+
+        // --- CHAT WINDOW CONTROLLER ---
+        function toggleChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            if (chatWindow.classList.contains('hidden')) {
+                chatWindow.classList.remove('hidden');
+                document.getElementById('chatInput').focus();
+            } else {
+                chatWindow.classList.add('hidden');
+            }
+        }
+
+        // Builds a chat bubble via DOM APIs with textContent (not innerHTML) -
+        // messages can contain arbitrary text (from the person typing, or
+        // echoed repo context), so this sidesteps HTML injection entirely
+        // rather than relying on remembering to escape it.
+        function appendChatBubble(role, text) {
+            const history = document.getElementById('chatHistory');
+            const bubble = document.createElement('div');
+            bubble.className = role === 'user'
+                ? 'self-end bg-blue-600 text-white p-3 rounded-l-lg rounded-tr-lg shadow-sm max-w-[85%] break-words'
+                : 'self-start bg-white text-blue-600 p-3 rounded-r-lg rounded-tl-lg border border-gray-200 shadow-sm max-w-[85%] break-words font-medium';
+            bubble.textContent = text;
+            history.appendChild(bubble);
+            history.scrollTop = history.scrollHeight;
+            return bubble;
+        }
+
+        // --- CHAT MESSAGING ENGINE ---
+        // Ties chat to the scan currently loaded (currentScanId) so the
+        // assistant actually knows which repository you're asking about,
+        // and parses the server's SSE-formatted stream (`data: {...}\n\n`)
+        // via a plain fetch + ReadableStream reader - POST bodies can't be
+        // consumed with the EventSource API, which only supports GET.
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            if (!currentScanId) {
+                appendChatBubble('assistant', "Run a scan first so I have a repository to talk about.");
+                return;
+            }
+
+            appendChatBubble('user', msg);
+            input.value = '';
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+
+            const replyBubble = appendChatBubble('assistant', '...');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                    body: JSON.stringify({ message: msg, scanId: currentScanId }),
+                });
+
+                if (!response.ok || !response.body) throw new Error('Chat request failed.');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullText = '';
+                let started = false;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+
+                    const frames = buffer.split('\n\n');
+                    buffer = frames.pop(); // keep any partial frame for the next chunk
+
+                    for (const frame of frames) {
+                        const line = frame.trim();
+                        if (!line.startsWith('data:')) continue;
+
+                        let event;
+                        try { event = JSON.parse(line.slice(5).trim()); } catch { continue; }
+
+                        if (event.token) {
+                            if (!started) { fullText = ''; started = true; }
+                            fullText += event.token;
+                            replyBubble.textContent = fullText;
+                            const historyEl = document.getElementById('chatHistory');
+                            historyEl.scrollTop = historyEl.scrollHeight;
+                        } else if (event.error) {
+                            replyBubble.textContent = event.error;
+                        }
+                    }
+                }
+            } catch (error) {
+                replyBubble.textContent = "Couldn't reach the AI assistant. Is the backend server running?";
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        // --- INIT ---
+        renderAccountUI();
+        document.getElementById("chatInput").addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
